@@ -1,0 +1,38 @@
+[
+  {
+    "thread_id": "thread-S01_simple",
+    "checkpoint_id": "1f1a047c-53d6-6076-8001-9a53d5b19296",
+    "step": 1,
+    "next": [
+      "classify"
+    ],
+    "route": "",
+    "attempt": 0,
+    "final_answer_present": false,
+    "events_count": 1
+  },
+  {
+    "thread_id": "thread-S01_simple",
+    "checkpoint_id": "1f1a047c-53d6-6075-8000-33ffff90bda3",
+    "step": 0,
+    "next": [
+      "intake"
+    ],
+    "route": "",
+    "attempt": 0,
+    "final_answer_present": false,
+    "events_count": 0
+  },
+  {
+    "thread_id": "thread-S01_simple",
+    "checkpoint_id": "1f1a047c-53d0-68e0-bfff-830231766230",
+    "step": -1,
+    "next": [
+      "__start__"
+    ],
+    "route": null,
+    "attempt": null,
+    "final_answer_present": false,
+    "events_count": 0
+  }
+]

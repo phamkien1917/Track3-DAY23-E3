@@ -31,11 +31,14 @@ def get_llm(model: str | None = None, temperature: float = 0.0) -> Any:  # noqa:
     """
     if os.getenv("GEMINI_API_KEY"):
         try:
-            from langchain_google_genai import ChatGoogleGenerativeAI
+            from langchain_google_genai import (  # type: ignore[import-not-found]
+                ChatGoogleGenerativeAI,
+            )
         except ImportError as exc:
             raise RuntimeError("Install: pip install langchain-google-genai") from exc
+        selected_model = model or os.environ.get("LLM_MODEL") or "gemini-2.5-flash"
         return ChatGoogleGenerativeAI(
-            model=model or os.getenv("LLM_MODEL", "gemini-2.5-flash"),
+            model=selected_model,
             google_api_key=os.getenv("GEMINI_API_KEY"),
             temperature=temperature,
         )
@@ -45,18 +48,20 @@ def get_llm(model: str | None = None, temperature: float = 0.0) -> Any:  # noqa:
             from langchain_openai import ChatOpenAI
         except ImportError as exc:
             raise RuntimeError("Install: pip install langchain-openai") from exc
+        selected_model = model or os.environ.get("LLM_MODEL") or "gpt-4o-mini"
         return ChatOpenAI(
-            model=model or os.getenv("LLM_MODEL", "gpt-4o-mini"),
+            model=selected_model,
             temperature=temperature,
         )
 
     if os.getenv("ANTHROPIC_API_KEY"):
         try:
-            from langchain_anthropic import ChatAnthropic
+            from langchain_anthropic import ChatAnthropic  # type: ignore[import-not-found]
         except ImportError as exc:
             raise RuntimeError("Install: pip install langchain-anthropic") from exc
+        selected_model = model or os.environ.get("LLM_MODEL") or "claude-sonnet-4-20250514"
         return ChatAnthropic(
-            model=model or os.getenv("LLM_MODEL", "claude-sonnet-4-20250514"),
+            model=selected_model,
             temperature=temperature,
         )
 

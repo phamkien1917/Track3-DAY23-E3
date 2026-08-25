@@ -6,10 +6,12 @@ that check schema/metrics can run even if students are still debugging graph wir
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 from .state import AgentState
 
 
-def build_graph(checkpointer: object | None = None) -> object:
+def build_graph(checkpointer: object | None = None) -> Any:  # noqa: ANN401
     """Build and compile the LangGraph workflow.
 
     TODO(student): Build the complete graph with this architecture:
@@ -89,4 +91,4 @@ def build_graph(checkpointer: object | None = None) -> object:
         workflow.add_edge(node, "finalize")
     workflow.add_edge("finalize", END)
 
-    return workflow.compile(checkpointer=checkpointer)
+    return workflow.compile(checkpointer=cast(Any, checkpointer))

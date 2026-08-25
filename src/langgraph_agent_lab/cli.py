@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from time import perf_counter
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from .graph import build_graph
 from .metrics import MetricsReport, metric_from_state, summarize_metrics, write_metrics
@@ -18,6 +18,27 @@ from .scenarios import load_scenarios
 from .state import initial_state
 
 app = typer.Typer(no_args_is_help=True)
+
+
+def _snapshot_summary(snapshot: object) -> dict[str, Any]:
+    """Return a compact, JSON-serializable state-history row."""
+    values = getattr(snapshot, "values", {}) or {}
+    metadata = getattr(snapshot, "metadata", {}) or {}
+    config = getattr(snapshot, "config", {}) or {}
+    configurable = config.get("configurable", {}) if isinstance(config, dict) else {}
+    events = values.get("events", []) if isinstance(values, dict) else []
+    return {
+        "thread_id": configurable.get("thread_id"),
+        "checkpoint_id": configurable.get("checkpoint_id"),
+        "step": metadata.get("step") if isinstance(metadata, dict) else None,
+        "next": list(getattr(snapshot, "next", ()) or ()),
+        "route": values.get("route") if isinstance(values, dict) else None,
+        "attempt": values.get("attempt") if isinstance(values, dict) else None,
+        "final_answer_present": (
+            bool(values.get("final_answer")) if isinstance(values, dict) else False
+        ),
+        "events_count": len(events) if isinstance(events, list) else 0,
+    }
 
 
 @app.command("run-scenarios")
@@ -67,6 +88,45 @@ def validate_metrics(metrics: Annotated[Path, typer.Option("--metrics")]) -> Non
     if report.total_scenarios < 6:
         raise typer.BadParameter("Expected at least 6 scenarios")
     typer.echo(f"Metrics valid. success_rate={report.success_rate:.2%}")
+
+
+@app.command("export-diagram")
+def export_diagram(output: Annotated[Path, typer.Option("--output")]) -> None:
+    """Export the compiled graph as a Mermaid diagram."""
+    graph = build_graph(checkpointer=None)
+    diagram = graph.get_graph().draw_mermaid()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(diagram, encoding="utf-8")
+    typer.echo(f"Wrote graph diagram to {output}")
+
+
+@app.command("inspect-history")
+def inspect_history(
+    config: Annotated[Path, typer.Option("--config")],
+    thread_id: Annotated[str, typer.Option("--thread-id")],
+    output: Annotated[Path, typer.Option("--output")],
+    limit: Annotated[int, typer.Option("--limit")] = 10,
+) -> None:
+    """Write a compact checkpoint history for one thread to JSON."""
+    cfg = yaml.safe_load(config.read_text(encoding="utf-8"))
+    checkpointer = build_checkpointer(cfg.get("checkpointer", "memory"), cfg.get("database_url"))
+    if checkpointer is None:
+        raise typer.BadParameter("State history requires a checkpointer")
+
+    graph = build_graph(checkpointer=checkpointer)
+    run_config = {"configurable": {"thread_id": thread_id}}
+    history = []
+    for snapshot in graph.get_state_history(run_config):
+        history.append(_snapshot_summary(snapshot))
+        if len(history) >= limit:
+            break
+
+    if not history:
+        raise typer.BadParameter(f"No checkpoint history found for thread_id={thread_id}")
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+    typer.echo(f"Wrote {len(history)} history snapshots to {output}")
 
 
 if __name__ == "__main__":

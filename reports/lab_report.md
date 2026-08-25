@@ -63,9 +63,14 @@ SQLite checkpoint history was retrieved successfully after every scenario. The d
 
 ## 7. Extension work
 
-SQLite persistence is enabled for the default lab run. Checkpoints are written
-in WAL mode, and the CLI retrieves state history after each scenario to verify
-that a persisted thread can be inspected after execution.
+Three Phase 5 extensions are implemented:
+
+1. **SQLite persistence:** the default lab run writes checkpoints in WAL mode,
+   using one `thread_id` per scenario.
+2. **Time-travel inspection:** `make inspect-history` exports compact checkpoint
+   snapshots for `thread-S01_simple` to `outputs/state_history.json`.
+3. **Graph diagram:** `make graph-diagram` exports the compiled workflow Mermaid
+   diagram to `outputs/graph.mmd` via `graph.get_graph().draw_mermaid()`.
 
 ## 8. Improvement plan
 
